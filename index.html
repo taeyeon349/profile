@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>프로필 관리 사이트</title>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <style>
+        body {
+            font-family: 'Malgun Gothic', sans-serif;
+            background-color: #f8fafc;
+            margin: 0;
+            padding: 40px 20px;
+            color: #334155;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .card {
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+        .hidden { display: none; }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+        }
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            background-color: #2563eb;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover { background-color: #1d4ed8; }
+        .btn-secondary { background-color: #64748b; }
+        .btn-secondary:hover { background-color: #475569; }
+        .btn-danger { background-color: #ef4444; }
+        .btn-danger:hover { background-color: #dc2626; }
+        
+        /* 사용자 목록 및 프로필 스타일 구역 */
+        .user-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .user-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .user-card:hover {
+            border-color: #2563eb;
+            transform: translateY(-2px);
+        }
+        .profile-img {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            background-color: #cbd5e1;
+            margin: 0 auto 10px auto;
+            display: block;
+        }
+        pre {
+            background: #0f172a;
+            color: #38bdf8;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h2>👤 프로필 관리 시스템</h2>
+        <div id="auth-menu"></div>
+    </div>
+
+    <div id="view-login" class="card">
+        <h3>로그인</h3>
+        <form id="form-login">
+            <div class="form-group">
+                <label>이메일 (Email)</label>
+                <input type="email" id="login-email" required>
+            </div>
+            <div class="form-group">
+                <label>비밀번호</label>
+                <input type="password" id="login-password" required>
+            </div>
+            <button type="submit">로그인</button>
+            <button type="button" class="btn-secondary" onclick="switchView('register')">회원가입</button>
+        </form>
+    </div>
+
+    <div id="view-register" class="card hidden">
+        <h3>회원가입</h3>
+        <form id="form-register">
+            <div class="form-group">
+                <label>사용자 이름 (Username)</label>
+                <input type="text" id="reg-username" required>
+            </div>
+            <div class="form-group">
+                <label>이메일 주소 (Email)</label>
+                <input type="email" id="reg-email" required>
+            </div>
+            <div class="form-group">
+                <label>비밀번호</label>
+                <input type="password" id="reg-password" required>
+            </div>
+            <button type="submit">가입하기</button>
+            <button type="button" class="btn-secondary" onclick="switchView('login')">로그인으로 돌아가기</button>
+        </form>
+    </div>
+
+    <div id="view-dashboard" class="hidden">
+        
+        <div class="card">
+            <h3>내 정보 관리</h3>
+            <div style="display: flex; gap: 30px; align-items: center;">
+                <div>
+                    <img id="my-profile-img" class="profile-img" src="" alt="내 프로필">
+                </div>
+                <div style="flex: 1;">
+                    <form id="form-update-profile">
+                        <input type="hidden" id="my-id">
+                        <div class="form-group">
+                            <label>사용자 이름</label>
+                            <input type="text" id="my-username" required>
+                        </div>
+                        <div class="form-group">
+                            <label>이메일 (변경 불가)</label>
+                            <input type="text" id="my-email" readonly style="background:#e2e8f0;">
+                        </div>
+                        <div class="form-group">
+                            <label>프로필 사진 변경 (업로드)</label>
+                            <input type="file" id="my-file" accept="image/*">
+                        </div>
+                        <button type="submit">프로필 저장하기</button>
+                        <button type="button" class="btn-danger" onclick="deleteAccount()">회원 탈퇴</button>
+                    </form>
+                </div>
+            </div>
+            
+            <div id="meta-response-section" class="hidden" style="margin-top: 20px;">
+                <h4>⚙️ 최근 업로드 이미지 메타데이터 응답 (profile_image_json)</h4>
+                <pre id="meta-json-output"></pre>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>👥 전체 사용자 목록</h3>
+            <div class="user-list" id="user-list-container"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const TOKEN_KEY = "access_token";
+    const API_BASE = "https://profile.taeyeonizing.store"; 
+
+    function switchView(view) {
+        $("#view-login").addClass("hidden");
+        $("#view-register").addClass("hidden");
+        $("#view-dashboard").addClass("hidden");
+        if (view === "login") $("#view-login").removeClass("hidden");
+        else if (view === "register") $("#view-register").removeClass("hidden");
+        else if (view === "dashboard") $("#view-dashboard").removeClass("hidden");
+    }
+
+    function updateHeader() {
+        if (localStorage.getItem(TOKEN_KEY)) {
+            $("#auth-menu").html(`<button class="btn-secondary" onclick="logout()">로그아웃</button>`);
+        } else {
+            $("#auth-menu").html(`<span style="font-size:14px; color:#94a3b8;">로그인이 필요합니다.</span>`);
+        }
+    }
+
+    function logout() {
+        localStorage.removeItem(TOKEN_KEY);
+        updateHeader();
+        switchView("login");
+    }
+
+    // 에러 메시지 추출용 헬퍼 함수
+    function getErrMsg(err) {
+        return (err.responseJSON && err.responseJSON.detail) ? err.responseJSON.detail : "서버 오류";
+    }
+
+    $("#form-register").on("submit", function(e) {
+        e.preventDefault();
+        const payload = {
+            username: $("#reg-username").val(),
+            email: $("#reg-email").val(),
+            password: $("#reg-password").val()
+        };
+
+        $.ajax({
+            url: API_BASE + "/register",
+            type: "POST",
+            contentType: "application/json",
+            data: JSON.stringify(payload),
+            success: function(res) {
+                alert(res.message);
+                $("#form-register")[0].reset();
+                switchView("login");
+            },
+            error: function(err) { alert("회원가입 실패: " + getErrMsg(err)); }
+        });
+    });
+
+    $("#form-login").on("submit", function(e) {
+        e.preventDefault();
+        const payload = {
+            email: $("#login-email").val(),
+            password: $("#login-password").val()
+        };
+
+        $.ajax({
+            url: API_BASE + "/login",
+            type: "POST",
+            contentType: "application/json",
+            data: JSON.stringify(payload),
+            success: function(res) {
+                localStorage.setItem(TOKEN_KEY, res.access_token);
+                updateHeader();
+                loadDashboard();
+            },
+            error: function(err) { alert("로그인 실패: " + getErrMsg(err)); }
+        });
+    });
+
+    function loadDashboard() {
+        switchView("dashboard");
+        loadMyInfo();
+        loadAllUsers();
+    }
+
+    function loadMyInfo() {
+        const token = localStorage.getItem(TOKEN_KEY);
+        if (!token) return;
+
+        $.ajax({
+            url: API_BASE + "/me",
+            type: "GET",
+            headers: { "Authorization": "Bearer " + token },
+            success: function(user) {
+                $("#my-id").val(user.id);
+                $("#my-username").val(user.username);
+                $("#my-email").val(user.email);
+
+                if (user.profile_image_json && user.profile_image_json.file_path) {
+                    // API_BASE 추가
+                    $("#my-profile-img").attr("src", API_BASE + user.profile_image_json.file_path);
+                    $("#meta-json-output").text(JSON.stringify(user.profile_image_json, null, 4));
+                    $("#meta-response-section").removeClass("hidden");
+                } else {
+                    $("#my-profile-img").attr("src", "https://api.dicebear.com/7.x/initials/svg?seed=" + user.username);
+                    $("#meta-response-section").addClass("hidden");
+                }
+            },
+            error: function() { logout(); }
+        });
+    }
+
+    function loadAllUsers() {
+        $.ajax({
+            url: API_BASE + "/api/users",
+            type: "GET",
+            success: function(users) {
+                let html = "";
+                users.forEach(user => {
+                    let img = "https://api.dicebear.com/7.x/initials/svg?seed=" + user.username;
+                    if (user.profile_image_json && user.profile_image_json.file_path) {
+                        img = API_BASE + user.profile_image_json.file_path;
+                    }
+                    html += `
+                        <div class="user-card" onclick="viewUserDetail(${user.id})">
+                            <img class="profile-img" src="${img}" alt="avatar">
+                            <strong>${user.username}</strong>
+                            <div style="font-size:12px; color:#64748b; margin-top:5px;">${user.email}</div>
+                        </div>
+                    `;
+                });
+                $("#user-list-container").html(html);
+            }
+        });
+    }
+
+    window.viewUserDetail = function(userId) {
+        $.ajax({
+            url: API_BASE + `/api/users/${userId}`,
+            type: "GET",
+            success: function(user) {
+                let metaText = "저장된 메타데이터 없음";
+                if (user.profile_image_json && user.profile_image_json.saved_name) {
+                    metaText = JSON.stringify(user.profile_image_json, null, 4);
+                }
+                alert(`이름: ${user.username}\n이메일: ${user.email}\n${metaText}`);
+            }
+        });
+    };
+
+    // [기능: 사용자 정보 수정 + 프로필 이미지 업로드] 부분 수정
+    $("#form-update-profile").on("submit", function(e) {
+        e.preventDefault();
+        const userId = $("#my-id").val();
+        const token = localStorage.getItem(TOKEN_KEY); // 토큰 가져오기
+
+        const formData = new FormData();
+        formData.append("username", $("#my-username").val());
+
+        const fileInput = $("#my-file")[0];
+        if (fileInput.files.length > 0) {
+            formData.append("image", fileInput.files[0]);
+        }
+
+        $.ajax({
+            url: API_BASE + `/api/users/${userId}/update`,
+            type: "POST",
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: { "Authorization": "Bearer " + token }, // <--- 이 부분 추가!
+            success: function(res) {
+                alert("프로필 수정이 성공적으로 완료되었습니다.");
+                $("#my-file").val(""); 
+                loadDashboard(); 
+            },
+            error: function(err) { 
+                alert("수정 오류 발생: " + getErrMsg(err)); 
+            }
+        });
+    });
+
+    window.deleteAccount = function() {
+        const userId = $("#my-id").val();
+        if (!confirm("정말 탈퇴하시겠습니까?")) return;
+
+        $.ajax({
+            url: API_BASE + `/api/users/${userId}`,
+            type: "DELETE",
+            success: function() { logout(); },
+            error: function(err) { alert("탈퇴 오류: " + getErrMsg(err)); }
+        });
+    };
+
+    $(document).ready(function() {
+        updateHeader();
+        if (localStorage.getItem(TOKEN_KEY)) loadDashboard();
+        else switchView("login");
+    });
+</script>
+</body>
+</html>

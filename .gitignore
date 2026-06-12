@@ -1,6 +1,8 @@
 # --- Python 관련 ---
 __pycache__/
-*.py[cod]
+*.pyc
+*.pyo
+*.pyd
 *$py.class
 .env
 venv/
@@ -25,3 +27,4 @@ profile_images/
 
 # --- 기타 ---
 node_modules/
+static/
